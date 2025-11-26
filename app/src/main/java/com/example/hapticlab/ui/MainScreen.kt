@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.hapticlab.R
 import com.example.hapticlab.ui.theme.HapticLabTheme
+import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen() {
@@ -138,7 +139,46 @@ fun MainScreen() {
                     )
                 }
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
-                    Text(text = "Box")
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val view = LocalView.current
+                    var batteryLevel by remember { mutableStateOf(0) }
+
+                    LaunchedEffect(isPressed) {
+                        if (isPressed) {
+                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            delay(1000)
+                            batteryLevel = 1
+                            delay(1000)
+                            batteryLevel = 2
+                            delay(1000)
+                            batteryLevel = 3
+                            delay(1000)
+                            batteryLevel = 4
+                        } else {
+                            batteryLevel = 0
+                        }
+                    }
+
+                    val imageRes = when (batteryLevel) {
+                        1 -> R.drawable.battery_quarter_solid_full
+                        2 -> R.drawable.battery_half_solid_full
+                        3 -> R.drawable.battery_three_quarters_solid_full
+                        4 -> R.drawable.battery_full_solid_full
+                        else -> R.drawable.battery_empty_solid_full
+                    }
+
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = "Battery",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = { /* No-op */ }
+                            )
+                    )
                 }
             }
         }
