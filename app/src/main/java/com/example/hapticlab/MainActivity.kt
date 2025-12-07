@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,10 +31,12 @@ class MainActivity : ComponentActivity() {
 fun HapticLabApp() {
     var showWelcomeScreen by remember { mutableStateOf(true) }
 
-    if (showWelcomeScreen) {
-        WelcomeScreen(onBeginClicked = { showWelcomeScreen = false })
-    } else {
-        MainScreen()
+    Surface {
+        if (showWelcomeScreen) {
+            WelcomeScreen(onBeginClicked = { showWelcomeScreen = false })
+        } else {
+            MainScreen()
+        }
     }
 }
 

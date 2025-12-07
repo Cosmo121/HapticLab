@@ -1,6 +1,9 @@
 
 package com.example.hapticlab.ui
 
+import android.content.Context
+import android.os.VibrationEffect
+import android.os.VibratorManager
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
@@ -11,15 +14,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -41,7 +50,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun MainScreen() {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(WindowInsets.statusBars.asPaddingValues()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
@@ -56,7 +67,8 @@ fun MainScreen() {
                     withStyle(style = SpanStyle(color = Color.Green)) {
                         append("Ready")
                     }
-                }
+                },
+                color = Color.White
             )
         }
         // Bento-box grid
@@ -102,7 +114,32 @@ fun MainScreen() {
                     )
                 }
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
-                    Text(text = "Box")
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val context = LocalContext.current
+                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
+
+                    LaunchedEffect(isPressed) {
+                        if (isPressed) {
+                            val vibrationEffect = VibrationEffect.startComposition()
+                                .addPrimitive(VibrationEffect.Composition.PRIMITIVE_THUD, 1.0f)
+                                .compose()
+                            vibrator.vibrate(vibrationEffect)
+                        }
+                    }
+
+                    Image(
+                        painter = painterResource(id = R.drawable.drum_solid_full),
+                        contentDescription = "Drum",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = { /* No-op */ }
+                            )
+                    )
                 }
             }
             // Second Row
@@ -113,13 +150,18 @@ fun MainScreen() {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val view = LocalView.current
+                    val context = LocalContext.current
+                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
                     var targetRotation by remember { mutableFloatStateOf(0f) }
                     val rotationAngle by animateFloatAsState(targetValue = targetRotation, label = "gear-rotation")
 
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
-                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            val vibrationEffect = VibrationEffect.startComposition()
+                                .addPrimitive(VibrationEffect.Composition.PRIMITIVE_SPIN, 1.0f)
+                                .compose()
+                            vibrator.vibrate(vibrationEffect)
                         }
                     }
 
@@ -141,22 +183,40 @@ fun MainScreen() {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val view = LocalView.current
-                    var batteryLevel by remember { mutableStateOf(0) }
+                    val context = LocalContext.current
+                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
+                    var batteryLevel by remember { mutableIntStateOf(0) }
 
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
-                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                            delay(1000)
-                            batteryLevel = 1
-                            delay(1000)
-                            batteryLevel = 2
-                            delay(1000)
-                            batteryLevel = 3
-                            delay(1000)
-                            batteryLevel = 4
+                            if (batteryLevel == 0) { // Start animation only if it's not already running
+                                val vibrationEffect = VibrationEffect.startComposition()
+                                    .addPrimitive(VibrationEffect.Composition.PRIMITIVE_SLOW_RISE, 1.0f)
+                                    .compose()
+                                vibrator.vibrate(vibrationEffect)
+                                for (i in 1..4) {
+                                    delay(125)
+                                    if (!isPressed) break
+                                    batteryLevel = i
+                                }
+                            }
                         } else {
-                            batteryLevel = 0
+                            if (batteryLevel > 0) {
+                                val vibrationEffect = VibrationEffect.startComposition()
+                                    .addPrimitive(VibrationEffect.Composition.PRIMITIVE_QUICK_FALL, 1.0f)
+                                    .compose()
+                                vibrator.vibrate(vibrationEffect)
+
+                                val initialLevel = batteryLevel
+                                val stepDelay = 250L / initialLevel
+
+                                for (i in initialLevel downTo 1) {
+                                    delay(stepDelay)
+                                    if (isPressed) break
+                                    batteryLevel = i - 1
+                                }
+                            }
                         }
                     }
 
@@ -187,7 +247,12 @@ fun MainScreen() {
 
 @Composable
 fun BentoBoxItem(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Card(modifier = modifier.fillMaxSize()) {
+    Card(
+        modifier = modifier.fillMaxSize(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.DarkGray
+        )
+    ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
