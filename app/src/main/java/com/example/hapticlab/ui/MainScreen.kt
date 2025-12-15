@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.hapticlab.R
 import com.example.hapticlab.ui.theme.HapticLabTheme
 import kotlinx.coroutines.delay
@@ -87,11 +89,17 @@ fun MainScreen() {
                     var isSwitchOn by remember { mutableStateOf(false) }
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val view = LocalView.current
+                    val context = LocalContext.current
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
 
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
-                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            val vibrationEffect = VibrationEffect.startComposition()
+                                .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 1.0f)
+                                .compose()
+                            vibrator.vibrate(vibrationEffect)
                         }
                     }
 
@@ -101,23 +109,34 @@ fun MainScreen() {
                         R.drawable.light_switch_off
                     }
 
-                    Image(
-                        painter = painterResource(id = imageRes),
-                        contentDescription = "Light switch",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = { isSwitchOn = !isSwitchOn }
-                            )
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = imageRes),
+                            contentDescription = "Light switch",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { isSwitchOn = !isSwitchOn }
+                                )
+                        )
+                        Text(
+                            text = "PRIMITIVE_CLICK",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
                 }
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
                     val context = LocalContext.current
-                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
                     val vibrator = vibratorManager.defaultVibrator
 
                     LaunchedEffect(isPressed) {
@@ -129,17 +148,64 @@ fun MainScreen() {
                         }
                     }
 
-                    Image(
-                        painter = painterResource(id = R.drawable.drum_solid_full),
-                        contentDescription = "Drum",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = { /* No-op */ }
-                            )
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.drum_solid_full),
+                            contentDescription = "Drum",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { /* No-op */ }
+                                )
+                        )
+                        Text(
+                            text = "PRIMITIVE_THUD",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+                }
+                BentoBoxItem(modifier = Modifier.weight(1f)) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val context = LocalContext.current
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
+
+                    LaunchedEffect(isPressed) {
+                        if (isPressed) {
+                            val vibrationEffect = VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
+                            vibrator.vibrate(vibrationEffect)
+                        }
+                    }
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_heart),
+                            contentDescription = "Heart",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { /* No-op */ }
+                                )
+                        )
+                        Text(
+                            text = "ONE_SHOT",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
                 }
             }
             // Second Row
@@ -151,10 +217,14 @@ fun MainScreen() {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
                     val context = LocalContext.current
-                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
                     val vibrator = vibratorManager.defaultVibrator
                     var targetRotation by remember { mutableFloatStateOf(0f) }
-                    val rotationAngle by animateFloatAsState(targetValue = targetRotation, label = "gear-rotation")
+                    val rotationAngle by animateFloatAsState(
+                        targetValue = targetRotation,
+                        label = "gear-rotation"
+                    )
 
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
@@ -165,26 +235,37 @@ fun MainScreen() {
                         }
                     }
 
-                    Image(
-                        painter = painterResource(id = R.drawable.gear_solid_full),
-                        contentDescription = "Gear",
-                        modifier = Modifier
-                            .graphicsLayer {
-                                rotationZ = rotationAngle
-                            }
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = { targetRotation += 10f }
-                            )
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.gear_solid_full),
+                            contentDescription = "Gear",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .graphicsLayer {
+                                    rotationZ = rotationAngle
+                                }
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { targetRotation += 10f }
+                                )
+                        )
+                        Text(
+                            text = "PRIMITIVE_SPIN",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
                 }
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
                     val context = LocalContext.current
-                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
                     val vibrator = vibratorManager.defaultVibrator
                     var batteryLevel by remember { mutableIntStateOf(0) }
 
@@ -192,7 +273,10 @@ fun MainScreen() {
                         if (isPressed) {
                             if (batteryLevel == 0) { // Start animation only if it's not already running
                                 val vibrationEffect = VibrationEffect.startComposition()
-                                    .addPrimitive(VibrationEffect.Composition.PRIMITIVE_SLOW_RISE, 1.0f)
+                                    .addPrimitive(
+                                        VibrationEffect.Composition.PRIMITIVE_SLOW_RISE,
+                                        1.0f
+                                    )
                                     .compose()
                                 vibrator.vibrate(vibrationEffect)
                                 for (i in 1..4) {
@@ -204,7 +288,10 @@ fun MainScreen() {
                         } else {
                             if (batteryLevel > 0) {
                                 val vibrationEffect = VibrationEffect.startComposition()
-                                    .addPrimitive(VibrationEffect.Composition.PRIMITIVE_QUICK_FALL, 1.0f)
+                                    .addPrimitive(
+                                        VibrationEffect.Composition.PRIMITIVE_QUICK_FALL,
+                                        1.0f
+                                    )
                                     .compose()
                                 vibrator.vibrate(vibrationEffect)
 
@@ -228,18 +315,110 @@ fun MainScreen() {
                         else -> R.drawable.battery_empty_solid_full
                     }
 
-                    Image(
-                        painter = painterResource(id = imageRes),
-                        contentDescription = "Battery",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource = interactionSource,
-                                indication = null,
-                                onClick = { /* No-op */ }
-                            )
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = imageRes),
+                            contentDescription = "Battery",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { /* No-op */ }
+                                )
+                        )
+                        Text(
+                            text = "PRIMITIVE_RISE/FALL",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
                 }
+                BentoBoxItem(modifier = Modifier.weight(1f)) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val context = LocalContext.current
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
+
+                    LaunchedEffect(isPressed) {
+                        if (isPressed) {
+                            val vibrationEffect = VibrationEffect.createWaveform(longArrayOf(100, 100, 100), -1)
+                            vibrator.vibrate(vibrationEffect)
+                        }
+                    }
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_check),
+                            contentDescription = "Check",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { /* No-op */ }
+                                )
+                        )
+                        Text(
+                            text = "WAVEFORM",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+                }
+            }
+            // Third Row
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                BentoBoxItem(modifier = Modifier.weight(1f)) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val context = LocalContext.current
+                    val vibratorManager =
+                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    val vibrator = vibratorManager.defaultVibrator
+
+                    LaunchedEffect(isPressed) {
+                        if (isPressed) {
+                            val vibrationEffect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
+                            vibrator.vibrate(vibrationEffect)
+                        }
+                    }
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_star),
+                            contentDescription = "Star",
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { /* No-op */ }
+                                )
+                        )
+                        Text(
+                            text = "PREDEFINED_HEAVY_CLICK",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                        )
+                    }
+                }
+                BentoBoxItem(modifier = Modifier.weight(1f)) {}
+                BentoBoxItem(modifier = Modifier.weight(1f)) {}
             }
         }
     }
