@@ -120,6 +120,7 @@ fun MainScreen() {
                                     indication = null,
                                     onClick = { isSwitchOn = !isSwitchOn }
                                 )
+                                .align(Alignment.Center)
                         )
                         Text(
                             text = "PRIMITIVE_CLICK",
@@ -159,6 +160,7 @@ fun MainScreen() {
                                     indication = null,
                                     onClick = { /* No-op */ }
                                 )
+                                .align(Alignment.Center)
                         )
                         Text(
                             text = "PRIMITIVE_THUD",
@@ -178,27 +180,69 @@ fun MainScreen() {
                         context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
                     val vibrator = vibratorManager.defaultVibrator
 
-                    LaunchedEffect(isPressed) {
-                        if (isPressed) {
-                            val vibrationEffect = VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
-                            vibrator.vibrate(vibrationEffect)
-                        }
-                    }
+                    var checkStates by remember { mutableStateOf(listOf(false, false, false, false)) }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_heart),
-                            contentDescription = "Heart",
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { /* No-op */ }
+                    Box(modifier = Modifier.fillMaxSize().clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = { /* No-op */ }
+                    )) {
+                        Column(
+                            modifier = Modifier.align(Alignment.Center),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Image(
+                                    painter = painterResource(id = if (checkStates[0]) R.drawable.circle_check_solid_full else R.drawable.circle_solid_full),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clickable {
+                                        checkStates = checkStates.toMutableList().apply { this[0] = !this[0] }
+                                        val vibrationEffect = VibrationEffect.startComposition()
+                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
+                                            .compose()
+                                        vibrator.vibrate(vibrationEffect)
+                                    }
                                 )
-                        )
+                                Image(
+                                    painter = painterResource(id = if (checkStates[1]) R.drawable.circle_check_solid_full else R.drawable.circle_solid_full),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clickable {
+                                        checkStates = checkStates.toMutableList().apply { this[1] = !this[1] }
+                                        val vibrationEffect = VibrationEffect.startComposition()
+                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
+                                            .compose()
+                                        vibrator.vibrate(vibrationEffect)
+                                    }
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Image(
+                                    painter = painterResource(id = if (checkStates[2]) R.drawable.circle_check_solid_full else R.drawable.circle_solid_full),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clickable {
+                                        checkStates = checkStates.toMutableList().apply { this[2] = !this[2] }
+                                        val vibrationEffect = VibrationEffect.startComposition()
+                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
+                                            .compose()
+                                        vibrator.vibrate(vibrationEffect)
+                                    }
+                                )
+                                Image(
+                                    painter = painterResource(id = if (checkStates[3]) R.drawable.circle_check_solid_full else R.drawable.circle_solid_full),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clickable {
+                                        checkStates = checkStates.toMutableList().apply { this[3] = !this[3] }
+                                        val vibrationEffect = VibrationEffect.startComposition()
+                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
+                                            .compose()
+                                        vibrator.vibrate(vibrationEffect)
+                                    }
+                                )
+                            }
+                        }
                         Text(
-                            text = "ONE_SHOT",
+                            text = "LOW_TICK",
                             color = Color.White,
                             fontSize = 12.sp,
                             modifier = Modifier
@@ -249,6 +293,7 @@ fun MainScreen() {
                                     indication = null,
                                     onClick = { targetRotation += 10f }
                                 )
+                                .align(Alignment.Center)
                         )
                         Text(
                             text = "PRIMITIVE_SPIN",
@@ -326,6 +371,7 @@ fun MainScreen() {
                                     indication = null,
                                     onClick = { /* No-op */ }
                                 )
+                                .align(Alignment.Center)
                         )
                         Text(
                             text = "PRIMITIVE_RISE/FALL",
@@ -363,6 +409,7 @@ fun MainScreen() {
                                     indication = null,
                                     onClick = { /* No-op */ }
                                 )
+                                .align(Alignment.Center)
                         )
                         Text(
                             text = "WAVEFORM",
@@ -406,6 +453,7 @@ fun MainScreen() {
                                     indication = null,
                                     onClick = { /* No-op */ }
                                 )
+                                .align(Alignment.Center)
                         )
                         Text(
                             text = "PREDEFINED_HEAVY_CLICK",
