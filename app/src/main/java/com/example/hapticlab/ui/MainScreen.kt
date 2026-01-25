@@ -4,7 +4,6 @@ package com.example.hapticlab.ui
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.VibratorManager
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -39,7 +38,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -325,7 +323,6 @@ fun MainScreen() {
                                 vibrator.vibrate(vibrationEffect)
                                 for (i in 1..4) {
                                     delay(125)
-                                    if (!isPressed) break
                                     batteryLevel = i
                                 }
                             }
@@ -344,7 +341,6 @@ fun MainScreen() {
 
                                 for (i in initialLevel downTo 1) {
                                     delay(stepDelay)
-                                    if (isPressed) break
                                     batteryLevel = i - 1
                                 }
                             }
