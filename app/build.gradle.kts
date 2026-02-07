@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.hapticlab"
+    namespace = "com.hartman.hapticlab"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.example.hapticlab"
+        applicationId = "com.hartman.hapticlab"
         minSdk = 35
         targetSdk = 36
         versionCode = 1

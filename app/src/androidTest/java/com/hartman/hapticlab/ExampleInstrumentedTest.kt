@@ -1,4 +1,4 @@
-package com.example.hapticlab
+package com.hartman.hapticlab
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,4 +1,4 @@
-package com.example.hapticlab.ui.theme
+package com.hartman.hapticlab.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

@@ -1,5 +1,5 @@
 
-package com.example.hapticlab.ui
+package com.hartman.hapticlab.ui
 
 import android.content.Context
 import android.os.VibrationEffect
@@ -45,8 +45,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.hapticlab.R
-import com.example.hapticlab.ui.theme.HapticLabTheme
+import com.hartman.hapticlab.ui.theme.HapticLabTheme
+import com.hartman.hapticlab.R
 import kotlinx.coroutines.delay
 
 @Composable

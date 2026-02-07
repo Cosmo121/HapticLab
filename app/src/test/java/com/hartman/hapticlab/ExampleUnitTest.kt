@@ -1,4 +1,4 @@
-package com.example.hapticlab
+package com.hartman.hapticlab
 
 import org.junit.Test
 

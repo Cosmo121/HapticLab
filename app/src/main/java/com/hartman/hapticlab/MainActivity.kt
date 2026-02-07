@@ -1,4 +1,4 @@
-package com.example.hapticlab
+package com.hartman.hapticlab
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,9 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.hapticlab.ui.MainScreen
-import com.example.hapticlab.ui.WelcomeScreen
-import com.example.hapticlab.ui.theme.HapticLabTheme
+import com.hartman.hapticlab.ui.MainScreen
+import com.hartman.hapticlab.ui.WelcomeScreen
+import com.hartman.hapticlab.ui.theme.HapticLabTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
