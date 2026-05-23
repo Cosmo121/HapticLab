@@ -2,7 +2,10 @@
 package com.hartman.hapticlab.ui
 
 import android.content.Context
+import android.os.Build
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
+import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
@@ -53,6 +56,45 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen() {
+    val context = LocalContext.current
+    val vibrator = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            vibratorManager?.defaultVibrator
+                ?: (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
+    // Helper for simple haptics with fallback
+    val playHaptic = remember(vibrator) {
+        { primitive: Int, fallback: Int ->
+            val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(primitive)) {
+                VibrationEffect.startComposition().addPrimitive(primitive, 1.0f).compose()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                VibrationEffect.createPredefined(fallback)
+            } else {
+                VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                try {
+                    val attributes = VibrationAttributes.Builder()
+                        .setUsage(VibrationAttributes.USAGE_TOUCH)
+                        .build()
+                    vibrator.vibrate(effect, attributes)
+                } catch (_: Exception) {
+                    vibrator.vibrate(effect)
+                }
+            } else {
+                vibrator.vibrate(effect)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,19 +137,6 @@ fun MainScreen() {
                     var isSwitchOn by remember { mutableStateOf(false) }
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val context = LocalContext.current
-                    val vibratorManager =
-                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    val vibrator = vibratorManager.defaultVibrator
-
-                    LaunchedEffect(isPressed) {
-                        if (isPressed) {
-                            val vibrationEffect = VibrationEffect.startComposition()
-                                .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 1.0f)
-                                .compose()
-                            vibrator.vibrate(vibrationEffect)
-                        }
-                    }
 
                     val imageRes = if (isSwitchOn || isPressed) {
                         R.drawable.light_switch_on
@@ -115,17 +144,26 @@ fun MainScreen() {
                         R.drawable.light_switch_off
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = {
+                                    isSwitchOn = !isSwitchOn
+                                    playHaptic(
+                                        VibrationEffect.Composition.PRIMITIVE_CLICK,
+                                        VibrationEffect.EFFECT_CLICK
+                                    )
+                                }
+                            )
+                    ) {
                         Image(
                             painter = painterResource(id = imageRes),
                             contentDescription = "Light switch",
                             modifier = Modifier
                                 .size(80.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { isSwitchOn = !isSwitchOn }
-                                )
                                 .align(Alignment.Center)
                         )
                         Text(
@@ -141,31 +179,30 @@ fun MainScreen() {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val context = LocalContext.current
-                    val vibratorManager =
-                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    val vibrator = vibratorManager.defaultVibrator
 
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
-                            val vibrationEffect = VibrationEffect.startComposition()
-                                .addPrimitive(VibrationEffect.Composition.PRIMITIVE_THUD, 1.0f)
-                                .compose()
-                            vibrator.vibrate(vibrationEffect)
+                            playHaptic(
+                                VibrationEffect.Composition.PRIMITIVE_THUD,
+                                VibrationEffect.EFFECT_HEAVY_CLICK
+                            )
                         }
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = { /* No-op */ }
+                            )
+                    ) {
                         Image(
                             painter = painterResource(id = R.drawable.drum_solid_full),
                             contentDescription = "Drum",
                             modifier = Modifier
                                 .size(80.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { /* No-op */ }
-                                )
                                 .align(Alignment.Center)
                         )
                         Text(
@@ -179,11 +216,6 @@ fun MainScreen() {
                     }
                 }
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
-                    val context = LocalContext.current
-                    val vibratorManager =
-                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    val vibrator = vibratorManager.defaultVibrator
-
                     var checkStates by remember { mutableStateOf(listOf(false, false, false, false)) }
 
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -198,10 +230,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[0] = !this[0] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                                 Image(
@@ -209,10 +241,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[1] = !this[1] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                             }
@@ -222,10 +254,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[2] = !this[2] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                                 Image(
@@ -233,10 +265,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[3] = !this[3] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                             }
@@ -259,27 +291,27 @@ fun MainScreen() {
             ) {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
-                    val isPressed by interactionSource.collectIsPressedAsState()
-                    val context = LocalContext.current
-                    val vibratorManager =
-                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    val vibrator = vibratorManager.defaultVibrator
                     var targetRotation by remember { mutableFloatStateOf(0f) }
                     val rotationAngle by animateFloatAsState(
                         targetValue = targetRotation,
                         label = "gear-rotation"
                     )
 
-                    LaunchedEffect(isPressed) {
-                        if (isPressed) {
-                            val vibrationEffect = VibrationEffect.startComposition()
-                                .addPrimitive(VibrationEffect.Composition.PRIMITIVE_SPIN, 1.0f)
-                                .compose()
-                            vibrator.vibrate(vibrationEffect)
-                        }
-                    }
-
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = {
+                                    targetRotation += 15f
+                                    playHaptic(
+                                        VibrationEffect.Composition.PRIMITIVE_SPIN,
+                                        VibrationEffect.EFFECT_CLICK
+                                    )
+                                }
+                            )
+                    ) {
                         Image(
                             painter = painterResource(id = R.drawable.gear_solid_full),
                             contentDescription = "Gear",
@@ -288,11 +320,6 @@ fun MainScreen() {
                                 .graphicsLayer {
                                     rotationZ = rotationAngle
                                 }
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { targetRotation += 10f }
-                                )
                                 .align(Alignment.Center)
                         )
                         Text(
@@ -308,22 +335,32 @@ fun MainScreen() {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-                    val context = LocalContext.current
-                    val vibratorManager =
-                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    val vibrator = vibratorManager.defaultVibrator
                     var batteryLevel by remember { mutableIntStateOf(0) }
 
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
                             if (batteryLevel == 0) { // Start animation only if it's not already running
-                                val vibrationEffect = VibrationEffect.startComposition()
-                                    .addPrimitive(
-                                        VibrationEffect.Composition.PRIMITIVE_SLOW_RISE,
-                                        1.0f
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(
+                                        VibrationEffect.Composition.PRIMITIVE_SLOW_RISE
                                     )
-                                    .compose()
-                                vibrator.vibrate(vibrationEffect)
+                                ) {
+                                    vibrator.vibrate(
+                                        VibrationEffect.startComposition()
+                                            .addPrimitive(
+                                                VibrationEffect.Composition.PRIMITIVE_SLOW_RISE,
+                                                1.0f
+                                            )
+                                            .compose()
+                                    )
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    vibrator.vibrate(
+                                        VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                                    )
+                                } else {
+                                    vibrator.vibrate(
+                                        VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
+                                    )
+                                }
                                 for (i in 1..4) {
                                     delay(125)
                                     batteryLevel = i
@@ -331,13 +368,27 @@ fun MainScreen() {
                             }
                         } else {
                             if (batteryLevel > 0) {
-                                val vibrationEffect = VibrationEffect.startComposition()
-                                    .addPrimitive(
-                                        VibrationEffect.Composition.PRIMITIVE_QUICK_FALL,
-                                        1.0f
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(
+                                        VibrationEffect.Composition.PRIMITIVE_QUICK_FALL
                                     )
-                                    .compose()
-                                vibrator.vibrate(vibrationEffect)
+                                ) {
+                                    vibrator.vibrate(
+                                        VibrationEffect.startComposition()
+                                            .addPrimitive(
+                                                VibrationEffect.Composition.PRIMITIVE_QUICK_FALL,
+                                                1.0f
+                                            )
+                                            .compose()
+                                    )
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    vibrator.vibrate(
+                                        VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+                                    )
+                                } else {
+                                    vibrator.vibrate(
+                                        VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE)
+                                    )
+                                }
 
                                 val initialLevel = batteryLevel
                                 val stepDelay = 250L / initialLevel
@@ -358,17 +409,20 @@ fun MainScreen() {
                         else -> R.drawable.battery_empty_solid_full
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = { /* No-op */ }
+                            )
+                    ) {
                         Image(
                             painter = painterResource(id = imageRes),
                             contentDescription = "Battery",
                             modifier = Modifier
                                 .size(80.dp)
-                                .clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { /* No-op */ }
-                                )
                                 .align(Alignment.Center)
                         )
                         Column(
@@ -391,11 +445,6 @@ fun MainScreen() {
                     }
                 }
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
-                    val context = LocalContext.current
-                    val vibratorManager =
-                        context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    val vibrator = vibratorManager.defaultVibrator
-
                     var checkStates by remember { mutableStateOf(listOf(false, false, false, false)) }
 
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -410,10 +459,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[0] = !this[0] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                                 Image(
@@ -421,10 +470,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[1] = !this[1] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                             }
@@ -434,10 +483,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[2] = !this[2] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                                 Image(
@@ -445,10 +494,10 @@ fun MainScreen() {
                                     contentDescription = null,
                                     modifier = Modifier.size(35.dp).clickable {
                                         checkStates = checkStates.toMutableList().apply { this[3] = !this[3] }
-                                        val vibrationEffect = VibrationEffect.startComposition()
-                                            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 1.0f)
-                                            .compose()
-                                        vibrator.vibrate(vibrationEffect)
+                                        playHaptic(
+                                            VibrationEffect.Composition.PRIMITIVE_TICK,
+                                            VibrationEffect.EFFECT_TICK
+                                        )
                                     }
                                 )
                             }
