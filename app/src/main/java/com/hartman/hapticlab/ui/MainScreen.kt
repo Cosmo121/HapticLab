@@ -2,12 +2,17 @@
 package com.hartman.hapticlab.ui
 
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,8 +34,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -38,8 +46,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -50,6 +60,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.BoxWithConstraints
 import com.hartman.hapticlab.ui.theme.HapticLabTheme
 import com.hartman.hapticlab.R
 import kotlinx.coroutines.delay
@@ -71,9 +82,9 @@ fun MainScreen() {
 
     // Helper for simple haptics with fallback
     val playHaptic = remember(vibrator) {
-        { primitive: Int, fallback: Int ->
+        { primitive: Int, fallback: Int, scale: Float ->
             val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(primitive)) {
-                VibrationEffect.startComposition().addPrimitive(primitive, 1.0f).compose()
+                VibrationEffect.startComposition().addPrimitive(primitive, scale).compose()
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 VibrationEffect.createPredefined(fallback)
             } else {
@@ -154,7 +165,8 @@ fun MainScreen() {
                                     isSwitchOn = !isSwitchOn
                                     playHaptic(
                                         VibrationEffect.Composition.PRIMITIVE_CLICK,
-                                        VibrationEffect.EFFECT_CLICK
+                                        VibrationEffect.EFFECT_CLICK,
+                                        1.0f
                                     )
                                 }
                             )
@@ -184,7 +196,8 @@ fun MainScreen() {
                         if (isPressed) {
                             playHaptic(
                                 VibrationEffect.Composition.PRIMITIVE_THUD,
-                                VibrationEffect.EFFECT_HEAVY_CLICK
+                                VibrationEffect.EFFECT_HEAVY_CLICK,
+                                1.0f
                             )
                         }
                     }
@@ -232,7 +245,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[0] = !this[0] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -243,7 +257,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[1] = !this[1] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -256,7 +271,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[2] = !this[2] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -267,7 +283,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[3] = !this[3] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -307,7 +324,8 @@ fun MainScreen() {
                                     targetRotation += 15f
                                     playHaptic(
                                         VibrationEffect.Composition.PRIMITIVE_SPIN,
-                                        VibrationEffect.EFFECT_CLICK
+                                        VibrationEffect.EFFECT_CLICK,
+                                        1.0f
                                     )
                                 }
                             )
@@ -461,7 +479,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[0] = !this[0] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -472,7 +491,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[1] = !this[1] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -485,7 +505,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[2] = !this[2] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -496,7 +517,8 @@ fun MainScreen() {
                                         checkStates = checkStates.toMutableList().apply { this[3] = !this[3] }
                                         playHaptic(
                                             VibrationEffect.Composition.PRIMITIVE_TICK,
-                                            VibrationEffect.EFFECT_TICK
+                                            VibrationEffect.EFFECT_TICK,
+                                            1.0f
                                         )
                                     }
                                 )
@@ -514,18 +536,174 @@ fun MainScreen() {
                 }
             }
             
-            // New Large Quadrant for information
-            BentoBoxItem(modifier = Modifier.fillMaxWidth().height(220.dp)) {
-                Text(
-                    text = "The above haptic examples use effects that may not be supported on all devices. For example, proper CLICK and RISE/FALL actions require a device to use linear resonant actuators, as opposed to older eccentric rotating mass motors.",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(16.dp)
-                )
+            // Slider Quadrant
+            BentoBoxItem(modifier = Modifier.fillMaxWidth().height(110.dp)) {
+                var sliderValue by remember { mutableFloatStateOf(0.5f) }
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "FINE SCRUB",
+                        color = Color.LightGray,
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Slider(
+                        value = sliderValue,
+                        onValueChange = { newValue ->
+                            // Even more frequent steps (150 vs 100) and softer intensity (0.2f)
+                            if ((newValue * 150).toInt() != (sliderValue * 150).toInt()) {
+                                playHaptic(
+                                    VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
+                                    VibrationEffect.EFFECT_TICK,
+                                    0.2f
+                                )
+                            }
+                            sliderValue = newValue
+                        },
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color.White,
+                            inactiveTrackColor = Color.Gray
+                        )
+                    )
+                }
+            }
+
+            // Pinball Quadrant
+            BentoBoxItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+            ) {
+                PinballEngine(playHaptic = playHaptic)
             }
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(100.dp))
+    }
+}
+
+@Composable
+fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
+    val context = LocalContext.current
+    val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager }
+    val accelerometer = remember { sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
+
+    var accelX by remember { mutableFloatStateOf(0f) }
+    var accelY by remember { mutableFloatStateOf(0f) }
+
+    if (sensorManager != null && accelerometer != null) {
+        DisposableEffect(Unit) {
+            val listener = object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent?) {
+                    if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+                        accelX = -event.values[0]
+                        accelY = event.values[1]
+                    }
+                }
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+            }
+            sensorManager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_GAME)
+            onDispose {
+                sensorManager.unregisterListener(listener)
+            }
+        }
+    }
+
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val width = constraints.maxWidth.toFloat()
+        val height = constraints.maxHeight.toFloat()
+        val ballRadius = 40f
+
+        var posX by remember { mutableFloatStateOf(width / 2) }
+        var posY by remember { mutableFloatStateOf(height / 2) }
+        var velX by remember { mutableFloatStateOf(0f) }
+        var velY by remember { mutableFloatStateOf(0f) }
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                withFrameNanos { _ ->
+                    // Physics constants
+                    val sensitivity = 0.5f
+                    val friction = 0.98f
+                    val bounce = -0.6f
+
+                    // Update velocity
+                    velX = (velX + accelX * sensitivity) * friction
+                    velY = (velY + accelY * sensitivity) * friction
+
+                    // Update position
+                    var nextX = posX + velX
+                    var nextY = posY + velY
+
+                    // Wall collision detection
+                    if (nextX - ballRadius < 0) {
+                        if (posX - ballRadius > 1f && velX < -1f) { // Significant hit
+                            playHaptic(
+                                VibrationEffect.Composition.PRIMITIVE_THUD,
+                                VibrationEffect.EFFECT_HEAVY_CLICK,
+                                1.0f
+                            )
+                        }
+                        nextX = ballRadius
+                        velX = if (Math.abs(velX) < 1.5f) 0f else velX * bounce
+                    } else if (nextX + ballRadius > width) {
+                        if (posX + ballRadius < width - 1f && velX > 1f) {
+                            playHaptic(
+                                VibrationEffect.Composition.PRIMITIVE_THUD,
+                                VibrationEffect.EFFECT_HEAVY_CLICK,
+                                1.0f
+                            )
+                        }
+                        nextX = width - ballRadius
+                        velX = if (Math.abs(velX) < 1.5f) 0f else velX * bounce
+                    }
+
+                    if (nextY - ballRadius < 0) {
+                        if (posY - ballRadius > 1f && velY < -1f) {
+                            playHaptic(
+                                VibrationEffect.Composition.PRIMITIVE_THUD,
+                                VibrationEffect.EFFECT_HEAVY_CLICK,
+                                1.0f
+                            )
+                        }
+                        nextY = ballRadius
+                        velY = if (Math.abs(velY) < 1.5f) 0f else velY * bounce
+                    } else if (nextY + ballRadius > height) {
+                        if (posY + ballRadius < height - 1f && velY > 1f) {
+                            playHaptic(
+                                VibrationEffect.Composition.PRIMITIVE_THUD,
+                                VibrationEffect.EFFECT_HEAVY_CLICK,
+                                1.0f
+                            )
+                        }
+                        nextY = height - ballRadius
+                        velY = if (Math.abs(velY) < 1.5f) 0f else velY * bounce
+                    }
+
+                    posX = nextX
+                    posY = nextY
+                }
+            }
+        }
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                color = Color.White,
+                radius = ballRadius,
+                center = Offset(posX, posY)
+            )
+        }
+        
+        Text(
+            text = "TILT TO ROLL",
+            color = Color.LightGray.copy(alpha = 0.5f),
+            fontSize = 10.sp,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+        )
     }
 }
 
