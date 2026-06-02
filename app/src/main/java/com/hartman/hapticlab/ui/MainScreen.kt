@@ -729,7 +729,7 @@ fun BentoBoxItem(modifier: Modifier = Modifier, content: @Composable () -> Unit)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-    HapticLabTheme {
+    HapticLabTheme(darkTheme = true) {
         MainScreen(onBackClick = {})
     }
 }
