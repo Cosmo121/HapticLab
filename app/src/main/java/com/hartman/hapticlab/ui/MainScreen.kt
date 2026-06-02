@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Slider
@@ -66,7 +68,7 @@ import com.hartman.hapticlab.R
 import kotlinx.coroutines.delay
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
     val vibrator = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -559,10 +561,26 @@ fun MainScreen() {
             BentoBoxItem(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(200.dp)
             ) {
                 PinballEngine(playHaptic = playHaptic)
             }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = onBackClick,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.DarkGray,
+                contentColor = Color.White
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .height(56.dp)
+        ) {
+            Text("BACK")
         }
         
         Spacer(modifier = Modifier.height(100.dp))
@@ -712,6 +730,6 @@ fun BentoBoxItem(modifier: Modifier = Modifier, content: @Composable () -> Unit)
 @Composable
 fun MainScreenPreview() {
     HapticLabTheme {
-        MainScreen()
+        MainScreen(onBackClick = {})
     }
 }

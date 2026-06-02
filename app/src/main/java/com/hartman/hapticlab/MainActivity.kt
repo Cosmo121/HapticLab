@@ -35,7 +35,7 @@ fun HapticLabApp() {
         if (showWelcomeScreen) {
             WelcomeScreen(onBeginClicked = { showWelcomeScreen = false })
         } else {
-            MainScreen()
+            MainScreen(onBackClick = { showWelcomeScreen = true })
         }
     }
 }
