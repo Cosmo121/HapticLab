@@ -113,23 +113,6 @@ fun MainScreen() {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = buildAnnotatedString {
-                    append("Haptic Engine Status: ")
-                    withStyle(style = SpanStyle(color = Color.Green)) {
-                        append("Ready")
-                    }
-                },
-                color = Color.White
-            )
-        }
-        
         Spacer(modifier = Modifier.height(32.dp))
 
         // Bento-box grid
