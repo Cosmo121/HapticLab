@@ -6,10 +6,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Build
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
-import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -25,11 +23,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -55,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -66,45 +63,30 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import com.hartman.hapticlab.ui.theme.HapticLabTheme
 import com.hartman.hapticlab.R
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MainScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
     val vibrator = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager =
-                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
-                ?: (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
+        val vibratorManager =
+            context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        vibratorManager.defaultVibrator
     }
 
     // Helper for simple haptics with fallback
     val playHaptic = remember(vibrator) {
         { primitive: Int, fallback: Int, scale: Float ->
-            val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(primitive)) {
+            val effect = if (vibrator.areAllPrimitivesSupported(primitive)) {
                 VibrationEffect.startComposition().addPrimitive(primitive, scale).compose()
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(fallback)
             } else {
-                VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
+                VibrationEffect.createPredefined(fallback)
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                try {
-                    val attributes = VibrationAttributes.Builder()
-                        .setUsage(VibrationAttributes.USAGE_TOUCH)
-                        .build()
-                    vibrator.vibrate(effect, attributes)
-                } catch (_: Exception) {
-                    vibrator.vibrate(effect)
-                }
-            } else {
-                vibrator.vibrate(effect)
-            }
+            val attributes = VibrationAttributes.Builder()
+                .setUsage(VibrationAttributes.USAGE_TOUCH)
+                .build()
+            vibrator.vibrate(effect, attributes)
         }
     }
 
@@ -113,7 +95,7 @@ fun MainScreen(onBackClick: () -> Unit) {
             .fillMaxSize()
             .safeDrawingPadding()
             .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -122,15 +104,15 @@ fun MainScreen(onBackClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // First Row
             Row(
                 modifier = Modifier.height(180.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
-                    var isSwitchOn by remember { mutableStateOf(false) }
+                    var isSwitchOn by remember { mutableStateOf(value = false) }
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -146,15 +128,14 @@ fun MainScreen(onBackClick: () -> Unit) {
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null,
-                                onClick = {
-                                    isSwitchOn = !isSwitchOn
-                                    playHaptic(
-                                        VibrationEffect.Composition.PRIMITIVE_CLICK,
-                                        VibrationEffect.EFFECT_CLICK,
-                                        1.0f
-                                    )
-                                }
-                            )
+                            ) {
+                                isSwitchOn = !isSwitchOn
+                                playHaptic(
+                                    VibrationEffect.Composition.PRIMITIVE_CLICK,
+                                    VibrationEffect.EFFECT_CLICK,
+                                    1.0f,
+                                )
+                            }
                     ) {
                         Image(
                             painter = painterResource(id = imageRes),
@@ -193,8 +174,7 @@ fun MainScreen(onBackClick: () -> Unit) {
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null,
-                                onClick = { /* No-op */ }
-                            )
+                            ) { /* No-op */ }
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.drum_solid_full),
@@ -289,7 +269,7 @@ fun MainScreen(onBackClick: () -> Unit) {
             // Second Row
             Row(
                 modifier = Modifier.height(180.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 BentoBoxItem(modifier = Modifier.weight(1f)) {
                     val interactionSource = remember { MutableInteractionSource() }
@@ -343,7 +323,7 @@ fun MainScreen(onBackClick: () -> Unit) {
                     LaunchedEffect(isPressed) {
                         if (isPressed) {
                             if (batteryLevel == 0) { // Start animation only if it's not already running
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(
+                                if (vibrator.areAllPrimitivesSupported(
                                         VibrationEffect.Composition.PRIMITIVE_SLOW_RISE
                                     )
                                 ) {
@@ -355,23 +335,19 @@ fun MainScreen(onBackClick: () -> Unit) {
                                             )
                                             .compose()
                                     )
-                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                } else {
                                     vibrator.vibrate(
                                         VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
                                     )
-                                } else {
-                                    vibrator.vibrate(
-                                        VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
-                                    )
                                 }
                                 for (i in 1..4) {
-                                    delay(125)
+                                    delay(125.milliseconds)
                                     batteryLevel = i
                                 }
                             }
                         } else {
                             if (batteryLevel > 0) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(
+                                if (vibrator.areAllPrimitivesSupported(
                                         VibrationEffect.Composition.PRIMITIVE_QUICK_FALL
                                     )
                                 ) {
@@ -383,13 +359,9 @@ fun MainScreen(onBackClick: () -> Unit) {
                                             )
                                             .compose()
                                     )
-                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    vibrator.vibrate(
-                                        VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
-                                    )
                                 } else {
                                     vibrator.vibrate(
-                                        VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE)
+                                        VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
                                     )
                                 }
 
@@ -397,7 +369,7 @@ fun MainScreen(onBackClick: () -> Unit) {
                                 val stepDelay = 250L / initialLevel
 
                                 for (i in initialLevel downTo 1) {
-                                    delay(stepDelay)
+                                    delay(stepDelay.milliseconds)
                                     batteryLevel = i - 1
                                 }
                             }
@@ -418,8 +390,7 @@ fun MainScreen(onBackClick: () -> Unit) {
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null,
-                                onClick = { /* No-op */ }
-                            )
+                            ) { /* No-op */ }
                     ) {
                         Image(
                             painter = painterResource(id = imageRes),
@@ -543,7 +514,7 @@ fun MainScreen(onBackClick: () -> Unit) {
                                 playHaptic(
                                     VibrationEffect.Composition.PRIMITIVE_LOW_TICK,
                                     VibrationEffect.EFFECT_TICK,
-                                    0.2f
+                                    0.2f,
                                 )
                             }
                             sliderValue = newValue
@@ -551,8 +522,8 @@ fun MainScreen(onBackClick: () -> Unit) {
                         colors = SliderDefaults.colors(
                             thumbColor = Color.White,
                             activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.Gray
-                        )
+                            inactiveTrackColor = Color.Gray,
+                        ),
                     )
                 }
             }
@@ -596,7 +567,7 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
     var accelX by remember { mutableFloatStateOf(0f) }
     var accelY by remember { mutableFloatStateOf(0f) }
 
-    if (sensorManager != null && accelerometer != null) {
+    if ((sensorManager != null) && (accelerometer != null)) {
         DisposableEffect(Unit) {
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent?) {
@@ -615,8 +586,8 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val width = constraints.maxWidth.toFloat()
-        val height = constraints.maxHeight.toFloat()
+        val width = this.constraints.maxWidth.toFloat()
+        val height = this.constraints.maxHeight.toFloat()
         val ballRadius = 40f
 
         var posX by remember { mutableFloatStateOf(width / 2) }
@@ -633,8 +604,8 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
                     val bounce = -0.6f
 
                     // Update velocity
-                    velX = (velX + accelX * sensitivity) * friction
-                    velY = (velY + accelY * sensitivity) * friction
+                    velX = ((velX + accelX * sensitivity) * friction)
+                    velY = ((velY + accelY * sensitivity) * friction)
 
                     // Update position
                     var nextX = posX + velX
@@ -650,7 +621,7 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
                             )
                         }
                         nextX = ballRadius
-                        velX = if (Math.abs(velX) < 1.5f) 0f else velX * bounce
+                        velX = if (kotlin.math.abs(velX) < 1.5f) 0f else velX * bounce
                     } else if (nextX + ballRadius > width) {
                         if (posX + ballRadius < width - 1f && velX > 1f) {
                             playHaptic(
@@ -660,7 +631,7 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
                             )
                         }
                         nextX = width - ballRadius
-                        velX = if (Math.abs(velX) < 1.5f) 0f else velX * bounce
+                        velX = if (kotlin.math.abs(velX) < 1.5f) 0f else velX * bounce
                     }
 
                     if (nextY - ballRadius < 0) {
@@ -672,7 +643,7 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
                             )
                         }
                         nextY = ballRadius
-                        velY = if (Math.abs(velY) < 1.5f) 0f else velY * bounce
+                        velY = if (kotlin.math.abs(velY) < 1.5f) 0f else velY * bounce
                     } else if (nextY + ballRadius > height) {
                         if (posY + ballRadius < height - 1f && velY > 1f) {
                             playHaptic(
@@ -682,7 +653,7 @@ fun PinballEngine(playHaptic: (Int, Int, Float) -> Unit) {
                             )
                         }
                         nextY = height - ballRadius
-                        velY = if (Math.abs(velY) < 1.5f) 0f else velY * bounce
+                        velY = if (kotlin.math.abs(velY) < 1.5f) 0f else velY * bounce
                     }
 
                     posX = nextX

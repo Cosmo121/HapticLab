@@ -20,12 +20,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var isDarkMode by remember { mutableStateOf(true) }
+            var isDarkMode by remember { mutableStateOf(value = true) }
             HapticLabTheme(darkTheme = isDarkMode) {
                 HapticLabApp(
                     isDarkMode = isDarkMode,
-                    onThemeToggle = { isDarkMode = !isDarkMode }
-                )
+                ) { isDarkMode = !isDarkMode }
             }
         }
     }
@@ -34,19 +33,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HapticLabApp(
     isDarkMode: Boolean,
-    onThemeToggle: () -> Unit
+    onThemeToggle: () -> Unit,
 ) {
-    var showWelcomeScreen by remember { mutableStateOf(true) }
+    var showWelcomeScreen by remember { mutableStateOf(value = true) }
 
     Surface {
         if (showWelcomeScreen) {
             WelcomeScreen(
                 onBeginClicked = { showWelcomeScreen = false },
                 isDarkMode = isDarkMode,
-                onThemeToggle = onThemeToggle
+                onThemeToggle = onThemeToggle,
             )
         } else {
-            MainScreen(onBackClick = { showWelcomeScreen = true })
+            MainScreen { showWelcomeScreen = true }
         }
     }
 }
@@ -54,11 +53,10 @@ fun HapticLabApp(
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    var isDarkMode by remember { mutableStateOf(true) }
+    var isDarkMode by remember { mutableStateOf(value = true) }
     HapticLabTheme(darkTheme = isDarkMode) {
         HapticLabApp(
             isDarkMode = isDarkMode,
-            onThemeToggle = { isDarkMode = !isDarkMode }
-        )
+        ) { isDarkMode = !isDarkMode }
     }
 }

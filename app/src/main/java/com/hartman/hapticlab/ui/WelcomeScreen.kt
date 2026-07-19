@@ -2,10 +2,8 @@
 package com.hartman.hapticlab.ui
 
 import android.content.Context
-import android.os.Build
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
-import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,43 +29,27 @@ import com.hartman.hapticlab.ui.theme.HapticLabTheme
 fun WelcomeScreen(
     onBeginClicked: () -> Unit,
     isDarkMode: Boolean,
-    onThemeToggle: () -> Unit
+    onThemeToggle: () -> Unit,
 ) {
     val context = LocalContext.current
     val vibrator = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager =
-                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
-                ?: (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
+        val vibratorManager =
+            context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        vibratorManager.defaultVibrator
     }
 
     val playHaptic = remember(vibrator) {
         { primitive: Int, fallback: Int ->
-            val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && vibrator.areAllPrimitivesSupported(primitive)) {
+            val effect = if (vibrator.areAllPrimitivesSupported(primitive)) {
                 VibrationEffect.startComposition().addPrimitive(primitive, 1.0f).compose()
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(fallback)
             } else {
-                VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
+                VibrationEffect.createPredefined(fallback)
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                try {
-                    val attributes = VibrationAttributes.Builder()
-                        .setUsage(VibrationAttributes.USAGE_TOUCH)
-                        .build()
-                    vibrator.vibrate(effect, attributes)
-                } catch (_: Exception) {
-                    vibrator.vibrate(effect)
-                }
-            } else {
-                vibrator.vibrate(effect)
-            }
+            val attributes = VibrationAttributes.Builder()
+                .setUsage(VibrationAttributes.USAGE_TOUCH)
+                .build()
+            vibrator.vibrate(effect, attributes)
         }
     }
 
@@ -76,7 +58,7 @@ fun WelcomeScreen(
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.SpaceAround,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = "HapticNerd",
@@ -125,7 +107,6 @@ fun WelcomeScreenPreview() {
         WelcomeScreen(
             onBeginClicked = {},
             isDarkMode = true,
-            onThemeToggle = {}
-        )
+        ) {}
     }
 }
